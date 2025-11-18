@@ -5,7 +5,7 @@ const router = express.Router();
 router.get('/naver', (req, res) => {
   const clientId = process.env.NAVER_CLIENT_ID;
   const redirectUri = encodeURIComponent(process.env.NAVER_REDIRECT_URI);
-  const state = Math.random().toString(36).substring(2, 15); // CSRF 방지용
+  const state = process.env.NAVER_STATE;
   const authorizeUrl = `https://nid.naver.com/oauth2.0/authorize?response_type=code&client_id=${clientId}&redirect_uri=${redirectUri}&state=${state}`;
   res.redirect(authorizeUrl);
 });
@@ -21,6 +21,10 @@ router.get('/naver/callback', async (req, res) => {
   const { code, state, error, error_description } = req.query;
   if (error) {
     return res.status(400).send(`Error: ${error_description || error}`);
+  }
+  // state 검증: .env의 NAVER_STATE와 비교
+  if (process.env.NAVER_STATE && process.env.NAVER_STATE !== state) {
+    return res.status(400).send('state 값 불일치: CSRF 의심');
   }
   try {
     // 1. 네이버 토큰 발급
