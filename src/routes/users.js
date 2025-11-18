@@ -30,4 +30,27 @@ router.get('/me/favorites', async (req, res) => {
   }
 });
 
+// 현재 로그인 유저 정보 반환 API
+router.get('/me', async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    const [rows] = await db.promise().query('SELECT id, nickname, profile_image FROM users WHERE id = ?', [userId]);
+    if (rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    // profileImage로 key 변환
+    const user = {
+      id: String(rows[0].id),
+      nickname: rows[0].nickname,
+      profileImage: rows[0].profile_image || undefined
+    };
+    res.json(user);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;
