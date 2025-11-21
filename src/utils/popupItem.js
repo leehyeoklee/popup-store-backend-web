@@ -1,4 +1,4 @@
-const db = require('../db');
+const db = require('../config/db');
 
 // PopupItem 변환 함수 (공통)
 async function toPopupItem(row, userId = null) {

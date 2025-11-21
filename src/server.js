@@ -6,6 +6,7 @@ const authRouter = require('./routes/auth');
 const popupsRouter = require('./routes/popups');
 const usersRouter = require('./routes/users');
 const favoritesRouter = require('./routes/favorites');
+const reportRouter = require('./routes/reports');
 const requireLogin = require('./middleware/requireLogin');
 
 const app = express();
@@ -30,6 +31,7 @@ db.connect((err) => {
 app.use(sessionMiddleware);
 app.use('/auth', authRouter);
 app.use('/api/popups', popupsRouter);
+app.use('/api/reports', reportRouter);
 app.use('/api/users', requireLogin, usersRouter);
 app.use('/api/favorites', requireLogin, favoritesRouter);
 

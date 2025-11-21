@@ -55,3 +55,11 @@ router.get('/naver/callback', async (req, res) => {
     res.status(500).send('네이버 인증 처리 중 오류 발생: ' + err.message);
   }
 });
+
+// 로그아웃 엔드포인트
+router.post('/logout', (req, res) => {
+  req.session.destroy(() => {
+    res.clearCookie('connect.sid');
+    res.json({ success: true });
+  });
+});

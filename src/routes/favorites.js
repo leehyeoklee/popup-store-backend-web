@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 
-const db = require('../db');
+const db = require('../config/db');
 const { toPopupItem } = require('./popups');
 
 // 즐겨찾기 추가
