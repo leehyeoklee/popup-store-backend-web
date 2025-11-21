@@ -7,7 +7,7 @@ const { toPopupItem } = require('../utils/popupItem');
 // 내 즐겨찾기 목록 API
 router.get('/me/favorites', async (req, res) => {
   try {
-    const userId = req.user?.id;
+    const userId = req.session.user?.id;
     if (!userId) {
       return res.status(401).json({ error: 'Unauthorized' });
     }
@@ -33,7 +33,7 @@ router.get('/me/favorites', async (req, res) => {
 // 현재 로그인 유저 정보 반환 API
 router.get('/me', async (req, res) => {
   try {
-    const userId = req.user?.id;
+    const userId = req.session.user?.id;
     if (!userId) {
       return res.status(401).json({ error: 'Unauthorized' });
     }

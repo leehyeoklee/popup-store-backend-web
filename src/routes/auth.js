@@ -1,5 +1,8 @@
 const express = require('express');
+const session = require('express-session');
 const router = express.Router();
+const { getNaverToken, getNaverUserInfo } = require('../utils/naverOAuth');
+const { findUserByUserId, createUser, saveRefreshToken } = require('../services/userService');
 
 // 네이버 OAuth 2.0 인증 요청
 router.get('/naver', (req, res) => {
@@ -11,10 +14,6 @@ router.get('/naver', (req, res) => {
 });
 
 module.exports = router;
-
-const { getNaverToken, getNaverUserInfo } = require('../utils/naverOAuth');
-const { sign: signJWT } = require('../utils/jwt');
-const { findUserByUserId, createUser } = require('../services/userService');
 
 // 네이버 OAuth 콜백 처리
 router.get('/naver/callback', async (req, res) => {
@@ -47,16 +46,11 @@ router.get('/naver/callback', async (req, res) => {
       });
       user = await findUserByUserId(profile.id);
     }
-    // JWT 발급
-    const payload = {
-      id: user.id, // PK
-      userid: user.userid, // 네이버 고유값
-      profile_image: user.profile_image,
-      name: user.name,
-      nickname: user.nickname
-    };
-    const jwtToken = signJWT(payload);
-    res.json({ jwtToken, user });
+    // 세션에 사용자 id만 저장
+    req.session.user = { id: user.id };
+
+    // 로그인 성공 응답
+    res.json({ success: true, user: req.session.user });
   } catch (err) {
     res.status(500).send('네이버 인증 처리 중 오류 발생: ' + err.message);
   }

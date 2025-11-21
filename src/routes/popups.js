@@ -59,7 +59,7 @@ router.get('/home', async (req, res) => {
     // DB 결과를 PopupItem 객체로 변환
     // ...existing code...
     // 로그인 유저 PK id 추출 (즐겨찾기 여부에 사용)
-    const userId = req.user?.id || null;
+    const userId = req.session.user?.id || null;
     // 비동기 변환 처리
     const latest = await Promise.all(latestRows.map(row => toPopupItem(row, userId)));
     const popular = await Promise.all(popularRows.map(row => toPopupItem(row, userId)));
@@ -128,9 +128,7 @@ router.get('/', async (req, res) => {
       [...params, parseInt(pageSize), offset]
     );
 
-    // PopupItem 변환 함수 재사용
-    // ...existing code...
-    const userId = req.user?.id || null;
+    const userId = req.session.user?.id || null;
     const items = await Promise.all(rows.map(row => toPopupItem(row, userId)));
     res.json({ items, page: parseInt(page), pageSize: parseInt(pageSize), total });
   } catch (err) {
@@ -148,7 +146,7 @@ router.get('/:id', async (req, res) => {
     if (rows.length === 0) {
       return res.status(404).json({ error: 'Popup not found' });
     }
-    const userId = req.user?.id || null;
+    const userId = req.session.user?.id || null;
     const item = await toPopupItem(rows[0], userId);
     res.json(item);
   } catch (err) {
@@ -172,7 +170,7 @@ router.get('/:id/nearby', async (req, res) => {
       `SELECT * FROM popup_stores WHERE id != ? AND (address LIKE ? OR CONCAT(SUBSTRING_INDEX(address, ' ', 2)) = ?) ORDER BY updated_at DESC LIMIT 12`,
       [popupId, `%${regionLabel}%`, regionLabel]
     );
-    const userId = req.user?.id || null;
+    const userId = req.session.user?.id || null;
     const items = await Promise.all(nearbyRows.map(row => toPopupItem(row, userId)));
     res.json({ items });
   } catch (err) {
@@ -202,7 +200,7 @@ router.get('/:id/similar', async (req, res) => {
       ORDER BY ps.updated_at DESC
       LIMIT 12`;
     const [rows] = await db.promise().query(query, [...categories, popupId]);
-    const userId = req.user?.id || null;
+    const userId = req.session.user?.id || null;
     const items = await Promise.all(rows.map(row => toPopupItem(row, userId)));
     res.json(items);
   } catch (err) {

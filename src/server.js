@@ -1,9 +1,9 @@
+const sessionMiddleware = require('./config/session');
 require('dotenv').config();
 const express = require('express');
 const mysql = require('mysql2');
 const authRouter = require('./routes/auth');
 const popupsRouter = require('./routes/popups');
-const authMiddleware = require('./middleware/auth');
 const usersRouter = require('./routes/users');
 const favoritesRouter = require('./routes/favorites');
 const requireLogin = require('./middleware/requireLogin');
@@ -27,7 +27,7 @@ db.connect((err) => {
   console.log('Connected to MySQL database');
 });
 
-app.use(authMiddleware);
+app.use(sessionMiddleware);
 app.use('/auth', authRouter);
 app.use('/api/popups', popupsRouter);
 app.use('/api/users', requireLogin, usersRouter);
