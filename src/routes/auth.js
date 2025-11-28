@@ -49,8 +49,8 @@ router.get('/naver/callback', async (req, res) => {
     // 세션에 사용자 id만 저장
     req.session.user = { id: user.id };
 
-    // 로그인 성공 응답
-    res.json({ success: true, user: req.session.user });
+    // 로그인 성공 시 홈 화면으로 리다이렉트
+    res.redirect('/');
   } catch (err) {
     res.status(500).send('네이버 인증 처리 중 오류 발생: ' + err.message);
   }

@@ -1,3 +1,4 @@
+const path = require('path');
 const sessionMiddleware = require('./config/session');
 require('dotenv').config();
 const express = require('express');
@@ -29,14 +30,26 @@ db.connect((err) => {
 });
 
 app.use(sessionMiddleware);
-app.use('/auth', authRouter);
+app.use('/auth', authRouter); 
 app.use('/api/popups', popupsRouter);
 app.use('/api/reports', reportRouter);
 app.use('/api/users', requireLogin, usersRouter);
 app.use('/api/favorites', requireLogin, favoritesRouter);
 
-app.get('/', (req, res) => {
-  res.send('Popup Store Backend is running!');
+
+// 정적 파일 서빙
+app.use(express.static(path.join(__dirname, '../dist')));
+// SPA 라우팅 지원: API가 아닌 GET 요청은 모두 index.html 반환
+app.use((req, res, next) => {
+  if (
+    req.method === 'GET' &&
+    !req.path.startsWith('/api') &&
+    !req.path.startsWith('/auth')
+  ) {
+    res.sendFile(path.join(__dirname, '../dist/index.html'));
+  } else {
+    next();
+  }
 });
 
 app.listen(port, () => {
