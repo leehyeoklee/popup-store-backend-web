@@ -47,7 +47,8 @@ router.get('/naver/callback', async (req, res) => {
       user = await findUserByUserId(profile.id);
     }
     // 세션에 사용자 id만 저장
-    req.session.user = { id: user.id };
+      req.session.user = { id: user.id };
+      req.session.naverAccessToken = tokenData.access_token;
 
     // 로그인 성공 시 홈 화면으로 리다이렉트
     res.redirect('/');
@@ -58,6 +59,21 @@ router.get('/naver/callback', async (req, res) => {
 
 // 로그아웃 엔드포인트
 router.post('/logout', (req, res) => {
+  const accessToken = req.session.naverAccessToken;
+  if (accessToken) {
+    const axios = require('axios');
+    axios.get('https://nid.naver.com/oauth2.0/token', {
+      params: {
+        grant_type: 'delete',
+        client_id: process.env.NAVER_CLIENT_ID,
+        client_secret: process.env.NAVER_CLIENT_SECRET,
+        access_token: accessToken,
+        service_provider: 'NAVER'
+      }
+    }).catch((err) => {
+      console.error('네이버 토큰 삭제 실패:', err.message);
+    });
+  }
   req.session.destroy(() => {
     res.clearCookie('connect.sid');
     res.json({ success: true });
