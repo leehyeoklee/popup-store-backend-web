@@ -29,41 +29,41 @@ function toEnglishCategory(kor) {
 // 메인 화면용 팝업스토어 API
 router.get('/home', async (req, res) => {
   try {
-    // 최신 팝업
-    const [latestRows] = await db.promise().query(
-      'SELECT * FROM popup_stores ORDER BY updated_at DESC LIMIT 10'
-    );
-    // 인기 팝업
-    const [popularRows] = await db.promise().query(
-      'SELECT * FROM popup_stores ORDER BY favorite_count DESC, weekly_view_count DESC LIMIT 10'
-    );
-    // month 쿼리 파라미터가 있으면 해당 달, 없으면 이번 달
-    let monthRows;
+    const userId = req.session.user?.id || null;
+    
+    // month 파라미터가 있으면 monthly만 조회
     if (req.query.month) {
       const [year, month] = req.query.month.split('-');
       const firstDay = `${year}-${month.padStart(2, '0')}-01`;
-      [monthRows] = await db.promise().query(
+      const [monthRows] = await db.promise().query(
         `SELECT * FROM popup_stores WHERE start_date <= LAST_DAY(?) AND end_date >= ? ORDER BY start_date DESC`,
         [firstDay, firstDay]
       );
-    } else {
-      const now = new Date();
-      const year = now.getFullYear();
-      const month = String(now.getMonth() + 1).padStart(2, '0');
-      const firstDay = `${year}-${month}-01`;
-      [monthRows] = await db.promise().query(
-        `SELECT * FROM popup_stores WHERE start_date <= LAST_DAY(?) AND end_date >= ? ORDER BY start_date DESC`,
-        [firstDay, firstDay]
-      );
+      const monthly = await Promise.all(monthRows.map(row => toPopupItem(row, userId)));
+      return res.json({ monthly });
     }
-    // DB 결과를 PopupItem 객체로 변환
-    // ...existing code...
-    // 로그인 유저 PK id 추출 (즐겨찾기 여부에 사용)
-    const userId = req.session.user?.id || null;
-    // 비동기 변환 처리
-    const latest = await Promise.all(latestRows.map(row => toPopupItem(row, userId)));
-    const popular = await Promise.all(popularRows.map(row => toPopupItem(row, userId)));
-    const monthly = await Promise.all(monthRows.map(row => toPopupItem(row, userId)));
+    
+    // month 파라미터가 없으면 3개 모두 조회 (병렬 처리)
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const firstDay = `${year}-${month}-01`;
+    
+    const [latestRows, popularRows, monthRows] = await Promise.all([
+      db.promise().query('SELECT * FROM popup_stores ORDER BY updated_at DESC LIMIT 10'),
+      db.promise().query('SELECT * FROM popup_stores ORDER BY favorite_count DESC, weekly_view_count DESC LIMIT 10'),
+      db.promise().query(
+        `SELECT * FROM popup_stores WHERE start_date <= LAST_DAY(?) AND end_date >= ? ORDER BY start_date DESC`,
+        [firstDay, firstDay]
+      )
+    ]);
+    
+    const [latest, popular, monthly] = await Promise.all([
+      Promise.all(latestRows[0].map(row => toPopupItem(row, userId))),
+      Promise.all(popularRows[0].map(row => toPopupItem(row, userId))),
+      Promise.all(monthRows[0].map(row => toPopupItem(row, userId)))
+    ]);
+    
     res.json({ latest, popular, monthly });
   } catch (err) {
     res.status(500).json({ error: err.message });
